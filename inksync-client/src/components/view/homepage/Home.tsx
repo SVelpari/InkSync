@@ -52,8 +52,16 @@ const HomePage: React.FC = () => {
   const [avatar, setAvatar] = useState(avatars[0].value);
 
   const handleCreateRoom = () => {
-    const newRoomId = nanoid(8); // e.g. "x7h2kd98"
-    navigate(`/room/${newRoomId}`);
+    if (!name.trim()) return alert('Please enter your name');
+
+    const newRoomId = nanoid(8);
+
+    navigate(`/room/${newRoomId}`, {
+      state: {
+        name,
+        avatar,
+      },
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,7 +72,7 @@ const HomePage: React.FC = () => {
   return (
     <Container>
       <h2>Multiplayer Game</h2>
-      <StyledForm onSubmit={handleSubmit}>
+      <StyledForm onSubmit={(e) => e.preventDefault()}>
         <FormGroup>
           <Label>
             Name:

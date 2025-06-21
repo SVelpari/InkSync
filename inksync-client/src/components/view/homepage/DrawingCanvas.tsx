@@ -28,11 +28,13 @@ const CanvasContainer = styled.div`
   border: 1px solid black;
 `;
 
-export const DrawingCanvas: React.FC<{ roomId: string; user: { name: string; color: string } }> = ({
-  roomId,
-  user,
-}) => {
-  const [participants, setParticipants] = useState<{ name: string; color: string }[]>([]);
+export const DrawingCanvas: React.FC<{
+  roomId: string;
+  user: { name: string; color: string; avatar?: string };
+}> = ({ roomId, user }) => {
+  const [participants, setParticipants] = useState<
+    { name: string; color: string; avatar?: string }[]
+  >([]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -125,14 +127,15 @@ export const DrawingCanvas: React.FC<{ roomId: string; user: { name: string; col
 
   return (
     <CanvasContainer>
-      <div style={{ position: 'fixed', top: 60, left: 10, zIndex: 10 }}>
+      <div>
         👥 In Room:{' '}
         {participants.map((p, i) => (
-          <div key={i} style={{ color: p.color, marginRight: 8 }}>
-            {p.name}
+          <div key={i} style={{ color: p.color, marginRight: 12 }}>
+            {p.avatar ? `(${p.avatar})` : ''} {p.name}
           </div>
         ))}
       </div>
+
       <Toolbar>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
         <input
