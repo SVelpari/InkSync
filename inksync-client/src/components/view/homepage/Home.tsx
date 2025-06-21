@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import { nanoid } from 'nanoid';
 
 const avatars = [
   { label: '🐱 Cat', value: 'cat' },
@@ -45,8 +47,14 @@ const Button = styled.button`
 `;
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(avatars[0].value);
+
+  const handleCreateRoom = () => {
+    const newRoomId = nanoid(8); // e.g. "x7h2kd98"
+    navigate(`/room/${newRoomId}`);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +91,7 @@ const HomePage: React.FC = () => {
         </FormGroup>
         <Button type="submit">Start Game</Button>
       </StyledForm>
+      <button onClick={handleCreateRoom}>Create New Room</button>
     </Container>
   );
 };

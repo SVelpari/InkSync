@@ -5,7 +5,7 @@ import { useYjsDrawing } from '../../hooks/websocket/useYjsDrawing';
 type Point = { x: number; y: number };
 
 const Toolbar = styled.div`
-  position: fixed;
+  border: 1px solid #ccc;
   top: 10px;
   left: 10px;
   z-index: 10;
@@ -18,11 +18,17 @@ const Toolbar = styled.div`
 `;
 
 const StyledCanvas = styled.canvas`
-  display: block;
+  display: flex;
   cursor: crosshair;
 `;
 
-export const DrawingCanvas: React.FC = () => {
+const CanvasContainer = styled.div`
+  height: 600px;
+  width: 800px;
+  border: 1px solid black;
+`;
+
+export const DrawingCanvas: React.FC<{ roomId: string }> = ({ roomId }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -47,11 +53,7 @@ export const DrawingCanvas: React.FC = () => {
   };
 
   // Initialize Yjs drawing hook
-  const { addPoint, clearCanvas } = useYjsDrawing(
-    'shared-canvas-room',
-    drawLine,
-    clearCanvasLocally,
-  );
+  const { addPoint, clearCanvas } = useYjsDrawing(roomId, drawLine, clearCanvasLocally);
 
   // Clear canvas button click
   const handleClearClick = () => {
@@ -105,7 +107,7 @@ export const DrawingCanvas: React.FC = () => {
   };
 
   return (
-    <div>
+    <CanvasContainer>
       <Toolbar>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
         <input
@@ -124,6 +126,6 @@ export const DrawingCanvas: React.FC = () => {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-    </div>
+    </CanvasContainer>
   );
 };
