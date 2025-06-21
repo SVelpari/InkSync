@@ -47,11 +47,15 @@ export const DrawingCanvas: React.FC = () => {
   };
 
   // Initialize Yjs drawing hook
-  const { addPoint, clearCanvas } = useYjsDrawing('shared-canvas-room', drawLine, clearCanvasLocally);
+  const { addPoint, clearCanvas } = useYjsDrawing(
+    'shared-canvas-room',
+    drawLine,
+    clearCanvasLocally,
+  );
 
   // Clear canvas button click
   const handleClearClick = () => {
-    clearCanvas();       // Broadcast to all users
+    clearCanvas(); // Broadcast to all users
     clearCanvasLocally(); // Clear this user's canvas immediately
   };
 

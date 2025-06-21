@@ -5,7 +5,7 @@ import { WebsocketProvider } from 'y-websocket';
 export function useYjsDrawing(
   roomName: string,
   onRemoteDraw: (x: number, y: number, color: string, strokeWidth: number) => void,
-  onClearCanvas: () => void
+  onClearCanvas: () => void,
 ) {
   const ydocRef = useRef<Y.Doc>();
   const drawingArrayRef = useRef<Y.Array<any>>();
