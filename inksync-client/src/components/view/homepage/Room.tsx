@@ -1,13 +1,14 @@
 import { useParams } from 'react-router-dom';
 import { DrawingCanvas } from '../homepage/DrawingCanvas';
+import { nanoid } from 'nanoid';
 
 export const Room = () => {
   const { roomId } = useParams<{ roomId: string }>();
 
-  return (
-    <div>
-      <h2>Room ID: {roomId}</h2>
-      {roomId ? <DrawingCanvas roomId={roomId} /> : <p>Invalid room</p>}
-    </div>
-  );
+  const user = {
+    name: 'User-' + nanoid(4), // random name
+    color: '#' + Math.floor(Math.random() * 0xffffff).toString(16), // random color
+  };
+
+  return roomId ? <DrawingCanvas roomId={roomId} user={user} /> : <p>Invalid room</p>;
 };

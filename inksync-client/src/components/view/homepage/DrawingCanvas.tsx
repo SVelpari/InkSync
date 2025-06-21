@@ -28,12 +28,24 @@ const CanvasContainer = styled.div`
   border: 1px solid black;
 `;
 
-export const DrawingCanvas: React.FC<{ roomId: string }> = ({ roomId }) => {
+export const DrawingCanvas: React.FC<{ roomId: string; user: { name: string; color: string } }> = ({
+  roomId,
+  user,
+}) => {
+  const [participants, setParticipants] = useState<{ name: string; color: string }[]>([]);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setParticipants(getUsers());
+    }, 1000); // poll awareness state every second
+    return () => clearInterval(interval);
+  }, []);
 
   // Draw line on canvas
   const drawLine = (x: number, y: number, color: string, stroke: number) => {
@@ -53,7 +65,12 @@ export const DrawingCanvas: React.FC<{ roomId: string }> = ({ roomId }) => {
   };
 
   // Initialize Yjs drawing hook
-  const { addPoint, clearCanvas } = useYjsDrawing(roomId, drawLine, clearCanvasLocally);
+  const { addPoint, clearCanvas, getUsers } = useYjsDrawing(
+    roomId,
+    drawLine,
+    clearCanvasLocally,
+    user,
+  );
 
   // Clear canvas button click
   const handleClearClick = () => {
@@ -108,6 +125,14 @@ export const DrawingCanvas: React.FC<{ roomId: string }> = ({ roomId }) => {
 
   return (
     <CanvasContainer>
+      <div style={{ position: 'fixed', top: 60, left: 10, zIndex: 10 }}>
+        👥 In Room:{' '}
+        {participants.map((p, i) => (
+          <div key={i} style={{ color: p.color, marginRight: 8 }}>
+            {p.name}
+          </div>
+        ))}
+      </div>
       <Toolbar>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
         <input
