@@ -5,9 +5,11 @@ import { WebsocketProvider } from 'y-websocket';
 export function useYjsDrawing(
   roomName: string,
   onRemoteDraw: (x: number, y: number, color: string, strokeWidth: number) => void,
+  onClearCanvas: () => void
 ) {
   const ydocRef = useRef<Y.Doc>();
   const drawingArrayRef = useRef<Y.Array<any>>();
+  const clearSignalRef = useRef<Y.Map<any>>();
 
   useEffect(() => {
     const ydoc = new Y.Doc();
@@ -22,8 +24,14 @@ export function useYjsDrawing(
       });
     });
 
+    const clearSignal = ydoc.getMap('clear');
+    clearSignal.observe(() => {
+      onClearCanvas();
+    });
+
     ydocRef.current = ydoc;
     drawingArrayRef.current = drawingArray;
+    clearSignalRef.current = clearSignal;
 
     return () => {
       provider.destroy();
@@ -35,5 +43,10 @@ export function useYjsDrawing(
     drawingArrayRef.current?.push([{ x, y, color, strokeWidth }]);
   };
 
-  return { addPoint };
+  const clearCanvas = () => {
+    drawingArrayRef.current?.delete(0, drawingArrayRef.current.length);
+    clearSignalRef.current?.set('clear', Date.now()); // trigger a shared clear event
+  };
+
+  return { addPoint, clearCanvas };
 }

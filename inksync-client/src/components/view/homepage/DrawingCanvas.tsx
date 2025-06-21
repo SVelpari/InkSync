@@ -29,6 +29,7 @@ export const DrawingCanvas: React.FC = () => {
   const [color, setColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
 
+  // Draw line on canvas
   const drawLine = (x: number, y: number, color: string, stroke: number) => {
     if (!ctxRef.current) return;
     ctxRef.current.strokeStyle = color;
@@ -37,8 +38,24 @@ export const DrawingCanvas: React.FC = () => {
     ctxRef.current.stroke();
   };
 
-  const { addPoint } = useYjsDrawing('shared-canvas-room', drawLine);
+  // Clear the canvas locally
+  const clearCanvasLocally = () => {
+    const canvas = canvasRef.current;
+    if (canvas && ctxRef.current) {
+      ctxRef.current.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
 
+  // Initialize Yjs drawing hook
+  const { addPoint, clearCanvas } = useYjsDrawing('shared-canvas-room', drawLine, clearCanvasLocally);
+
+  // Clear canvas button click
+  const handleClearClick = () => {
+    clearCanvas();       // Broadcast to all users
+    clearCanvasLocally(); // Clear this user's canvas immediately
+  };
+
+  // Canvas setup
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -56,6 +73,7 @@ export const DrawingCanvas: React.FC = () => {
     }
   }, []);
 
+  // Update brush color/stroke width
   useEffect(() => {
     if (ctxRef.current) {
       ctxRef.current.strokeStyle = color;
@@ -74,7 +92,7 @@ export const DrawingCanvas: React.FC = () => {
     if (!isDrawing) return;
     const { offsetX: x, offsetY: y } = e.nativeEvent;
     drawLine(x, y, color, strokeWidth);
-    addPoint(x, y, color, strokeWidth); // Broadcast via Yjs
+    addPoint(x, y, color, strokeWidth);
   };
 
   const handleMouseUp = () => {
@@ -93,6 +111,7 @@ export const DrawingCanvas: React.FC = () => {
           value={strokeWidth}
           onChange={(e) => setStrokeWidth(Number(e.target.value))}
         />
+        <button onClick={handleClearClick}>🧹 Clear</button>
       </Toolbar>
       <StyledCanvas
         ref={canvasRef}
