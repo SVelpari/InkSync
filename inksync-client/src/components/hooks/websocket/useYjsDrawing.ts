@@ -9,6 +9,7 @@ export function useYjsDrawing(
   onClearCanvas: () => void,
   userInfo: { name: string; color: string },
 ) {
+  console.log('xx-useYjsDrawing');
   const ydocRef = useRef<Y.Doc>();
   const awarenessRef = useRef<Awareness>();
   const drawingArrayRef = useRef<Y.Array<any>>();
@@ -18,6 +19,12 @@ export function useYjsDrawing(
     const ydoc = new Y.Doc();
     const provider = new WebsocketProvider('wss://demos.yjs.dev', roomName, ydoc);
     const awareness = provider.awareness;
+
+    provider.on('status', (event) => {
+      console.log('xx-WebSocket status:', event.status); // "connected" | "disconnected"
+    });
+
+    console.log('xx-Connected to room:', roomName);
 
     awareness.setLocalStateField('user', userInfo);
 
@@ -36,6 +43,10 @@ export function useYjsDrawing(
           onRemoteDraw(point.x, point.y, point.color, point.strokeWidth);
         });
       });
+    });
+
+    drawingArray.observe((event) => {
+      console.log('xx-Received drawing event from Yjs', event);
     });
 
     const clearSignal = ydoc.getMap('clear');

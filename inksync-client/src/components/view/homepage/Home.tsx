@@ -64,11 +64,6 @@ const HomePage: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Welcome, ${name}! You chose the ${avatar} avatar.`);
-  };
-
   return (
     <Container>
       <h2>Multiplayer Game</h2>

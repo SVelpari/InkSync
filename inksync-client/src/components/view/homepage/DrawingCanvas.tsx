@@ -1,8 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useYjsDrawing } from '../../hooks/websocket/useYjsDrawing';
-
-type Point = { x: number; y: number };
 
 const Toolbar = styled.div`
   border: 1px solid #ccc;
@@ -20,6 +18,7 @@ const Toolbar = styled.div`
 const StyledCanvas = styled.canvas`
   display: flex;
   cursor: crosshair;
+  border: 1px solid red;
 `;
 
 const CanvasContainer = styled.div`
@@ -32,62 +31,55 @@ export const DrawingCanvas: React.FC<{
   roomId: string;
   user: { name: string; color: string; avatar?: string };
 }> = ({ roomId, user }) => {
+  // canvasRef: reference to the <canvas> DOM element
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // ctxRef: reference to the 2D drawing context of the canvas
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+
   const [participants, setParticipants] = useState<
     { name: string; color: string; avatar?: string }[]
   >([]);
-
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState('#000000');
   const [strokeWidth, setStrokeWidth] = useState(4);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setParticipants(getUsers());
-    }, 1000); // poll awareness state every second
-    return () => clearInterval(interval);
+  // Draw a line to (x, y) using the current context
+  const drawLine = useCallback((x: number, y: number, color: string, stroke: number) => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = stroke;
+    ctx.lineTo(x, y);
+    ctx.stroke();
   }, []);
 
-  // Draw line on canvas
-  const drawLine = (x: number, y: number, color: string, stroke: number) => {
-    if (!ctxRef.current) return;
-    ctxRef.current.strokeStyle = color;
-    ctxRef.current.lineWidth = stroke;
-    ctxRef.current.lineTo(x, y);
-    ctxRef.current.stroke();
-  };
-
-  // Clear the canvas locally
-  const clearCanvasLocally = () => {
+  // Clear the canvas using the current context
+  const clearCanvasLocally = useCallback(() => {
     const canvas = canvasRef.current;
-    if (canvas && ctxRef.current) {
-      ctxRef.current.clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = ctxRef.current;
+    if (canvas && ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-  };
+  }, []);
 
-  // Initialize Yjs drawing hook
+  // Yjs drawing hook: provides addPoint (for local drawing), clearCanvas (broadcast), getUsers (awareness)
   const { addPoint, clearCanvas, getUsers } = useYjsDrawing(
     roomId,
-    drawLine,
+    drawLine, // called by Yjs when remote points arrive
     clearCanvasLocally,
     user,
   );
 
-  // Clear canvas button click
-  const handleClearClick = () => {
-    clearCanvas(); // Broadcast to all users
-    clearCanvasLocally(); // Clear this user's canvas immediately
-  };
-
-  // Canvas setup
+  // Set up the canvas context and update when color/strokeWidth changes
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Set canvas size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    // Get and configure context
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.lineCap = 'round';
@@ -96,16 +88,23 @@ export const DrawingCanvas: React.FC<{
       ctx.lineWidth = strokeWidth;
       ctxRef.current = ctx;
     }
-  }, []);
-
-  // Update brush color/stroke width
-  useEffect(() => {
-    if (ctxRef.current) {
-      ctxRef.current.strokeStyle = color;
-      ctxRef.current.lineWidth = strokeWidth;
-    }
   }, [color, strokeWidth]);
 
+  // Poll Yjs awareness state for participants
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setParticipants(getUsers());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [getUsers]);
+
+  // Clear canvas button click
+  const handleClearClick = () => {
+    clearCanvas(); // Broadcast to all users
+    // clearCanvasLocally(); // Clear this user's canvas immediately
+  };
+
+  // Mouse event handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     const { offsetX: x, offsetY: y } = e.nativeEvent;
     ctxRef.current?.beginPath();
@@ -114,9 +113,10 @@ export const DrawingCanvas: React.FC<{
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    console.log('yy-handleMouseMove: ', isDrawing);
     if (!isDrawing) return;
     const { offsetX: x, offsetY: y } = e.nativeEvent;
-    drawLine(x, y, color, strokeWidth);
+    // Instead of drawing directly, send point to Yjs (which will call drawLine for all clients)
     addPoint(x, y, color, strokeWidth);
   };
 
